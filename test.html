@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>آزمایش وب سایت قرآن کریم</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+    <link rel="stylesheet" href="assets/css/animations.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <h2>بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</h2>
+            <p id="loading-text">در حال بارگذاری...</p>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header id="main-header" class="main-header">
+        <nav class="navbar">
+            <div class="nav-container">
+                <a href="#home" class="nav-brand">
+                    <i class="fas fa-book-quran"></i>
+                    <span>قرآن کریم</span>
+                </a>
+
+                <div id="nav-menu" class="nav-menu">
+                    <a href="#home" class="nav-link active">خانه</a>
+                    <a href="#surahs" class="nav-link">سوره‌ها</a>
+                    <a href="#search" class="nav-link">جستجو</a>
+                    <a href="#favorites" class="nav-link">علاقه‌مندی‌ها</a>
+                    <a href="#settings" class="nav-link">تنظیمات</a>
+                </div>
+
+                <div class="nav-actions">
+                    <button id="theme-toggle" class="theme-toggle" title="تغییر تم">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button id="global-audio-toggle" class="audio-control" title="کنترل صوت">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                    <button id="nav-toggle" class="nav-toggle">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Test Section -->
+        <section id="test" style="padding: 120px 20px; min-height: 100vh; background: var(--bg-primary);">
+            <div class="container">
+                <h1 class="text-center" style="color: var(--primary-color); margin-bottom: 3rem;">
+                    آزمایش عملکرد وب سایت قرآن کریم
+                </h1>
+
+                <!-- API Test -->
+                <div class="test-section" style="margin-bottom: 3rem; padding: 2rem; background: var(--bg-secondary); border-radius: var(--border-radius-lg); border: 1px solid var(--border-light);">
+                    <h3 style="color: var(--primary-color); margin-bottom: 1.5rem;">
+                        <i class="fas fa-plug"></i>
+                        آزمایش API
+                    </h3>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                        <button class="btn btn-primary" onclick="testAPI()">
+                            <i class="fas fa-play"></i>
+                            آزمایش API
+                        </button>
+                        <button class="btn btn-secondary" onclick="testSurahLoad()">
+                            <i class="fas fa-list"></i>
+                            بارگذاری سوره‌ها
+                        </button>
+                        <button class="btn btn-outline" onclick="testSearch()">
+                            <i class="fas fa-search"></i>
+                            آزمایش جستجو
+                        </button>
+                        <button class="btn btn-ghost" onclick="testAudio()">
+                            <i class="fas fa-volume-up"></i>
+                            آزمایش صوت
+                        </button>
+                    </div>
+                    <div id="api-results" style="background: var(--bg-primary); padding: 1rem; border-radius: var(--border-radius-md); border: 1px solid var(--border-light); font-family: monospace; font-size: 0.875rem; max-height: 300px; overflow-y: auto;"></div>
+                </div>
+
+                <!-- Notification Test -->
+                <div class="test-section" style="margin-bottom: 3rem; padding: 2rem; background: var(--bg-secondary); border-radius: var(--border-radius-lg); border: 1px solid var(--border-light);">
+                    <h3 style="color: var(--primary-color); margin-bottom: 1.5rem;">
+                        <i class="fas fa-bell"></i>
+                        آزمایش اعلان‌ها
+                    </h3>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="showSuccessNotification()">
+                            <i class="fas fa-check"></i>
+                            موفقیت
+                        </button>
+                        <button class="btn btn-danger" onclick="showErrorNotification()">
+                            <i class="fas fa-times"></i>
+                            خطا
+                        </button>
+                        <button class="btn btn-secondary" onclick="showWarningNotification()">
+                            <i class="fas fa-exclamation"></i>
+                            هشدار
+                        </button>
+                        <button class="btn btn-outline" onclick="showInfoNotification()">
+                            <i class="fas fa-info"></i>
+                            اطلاعات
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sample Verse Display -->
+                <div class="test-section" style="margin-bottom: 3rem; padding: 2rem; background: var(--bg-secondary); border-radius: var(--border-radius-lg); border: 1px solid var(--border-light);">
+                    <h3 style="color: var(--primary-color); margin-bottom: 1.5rem;">
+                        <i class="fas fa-book-open"></i>
+                        نمونه نمایش آیه
+                    </h3>
+                    <div id="sample-verse" class="verse-card" style="max-width: 800px; margin: 0 auto;">
+                        <div class="verse-header">
+                            <div class="verse-number">1</div>
+                            <div class="verse-actions">
+                                <button class="verse-action-btn" onclick="testVerseAudio(1)" title="پخش">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <button class="verse-action-btn" onclick="testFavorite(1)" title="علاقه‌مندی">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                                <button class="verse-action-btn" onclick="testCopy(1)" title="کپی">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                <button class="verse-action-btn" onclick="testShare(1)" title="اشتراک">
+                                    <i class="fas fa-share"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="verse-text">
+                            <div class="verse-arabic" style="font-size: 2rem;">
+                                بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ
+                            </div>
+                            <div class="verse-translation" style="font-size: 1.125rem;">
+                                به نام خداوند بخشنده مهربان
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Links -->
+                <div class="test-section" style="text-align: center; padding: 2rem; background: var(--bg-secondary); border-radius: var(--border-radius-lg); border: 1px solid var(--border-light);">
+                    <h3 style="color: var(--primary-color); margin-bottom: 1.5rem;">
+                        <i class="fas fa-link"></i>
+                        پیوندهای سریع
+                    </h3>
+                    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                        <a href="index.html" class="btn btn-primary">
+                            <i class="fas fa-home"></i>
+                            صفحه اصلی
+                        </a>
+                        <button class="btn btn-secondary" onclick="window.location.reload()">
+                            <i class="fas fa-refresh"></i>
+                            بارگذاری مجدد
+                        </button>
+                        <button class="btn btn-outline" onclick="clearTestResults()">
+                            <i class="fas fa-trash"></i>
+                            پاک کردن نتایج
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Scripts -->
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script>
+        // Test Functions
+        let testApp;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize a simple app instance for testing
+            testApp = {
+                showMessage: function(message, type = 'success') {
+                    const notification = document.createElement('div');
+                    notification.className = `notification notification-${type}`;
+                    
+                    let icon;
+                    switch (type) {
+                        case 'success': icon = 'fa-check-circle'; break;
+                        case 'error': icon = 'fa-exclamation-circle'; break;
+                        case 'warning': icon = 'fa-exclamation-triangle'; break;
+                        case 'info': icon = 'fa-info-circle'; break;
+                        default: icon = 'fa-info-circle';
+                    }
+                    
+                    notification.innerHTML = `
+                        <div class="notification-content">
+                            <i class="fas ${icon}"></i>
+                            <span>${message}</span>
+                        </div>
+                    `;
+
+                    document.body.appendChild(notification);
+                    
+                    setTimeout(() => {
+                        notification.classList.add('notification-enter');
+                    }, 10);
+
+                    setTimeout(() => {
+                        notification.classList.add('notification-exit');
+                        setTimeout(() => {
+                            if (document.body.contains(notification)) {
+                                document.body.removeChild(notification);
+                            }
+                        }, 300);
+                    }, 3000);
+                },
+
+                logResult: function(message) {
+                    const resultsDiv = document.getElementById('api-results');
+                    const timestamp = new Date().toLocaleTimeString('fa-IR');
+                    resultsDiv.innerHTML += `<div style="margin-bottom: 0.5rem; color: var(--text-secondary);">[${timestamp}] ${message}</div>`;
+                    resultsDiv.scrollTop = resultsDiv.scrollHeight;
+                }
+            };
+
+            testApp.showMessage('سیستم آزمایش آماده است', 'info');
+            testApp.logResult('✅ سیستم آزمایش راه‌اندازی شد');
+            
+            // Hide loading screen
+            setTimeout(() => {
+                document.getElementById('loading-screen').style.display = 'none';
+            }, 1000);
+        });
+
+        async function testAPI() {
+            testApp.logResult('🔄 شروع آزمایش API...');
+            testApp.showMessage('در حال آزمایش API...', 'info');
+
+            try {
+                // Test getting surahs
+                const surahs = await window.quranAPI.getSurahs();
+                testApp.logResult(`✅ سوره‌ها دریافت شدند: ${surahs.length} سوره`);
+                
+                // Test getting a specific surah
+                const surah = await window.quranAPI.getSurah(1);
+                testApp.logResult(`✅ سوره الفاتحه دریافت شد: ${surah.numberOfAyahs} آیه`);
+                
+                // Test getting surah with translation
+                const surahWithTranslation = await window.quranAPI.getSurahWithTranslation(1);
+                testApp.logResult(`✅ سوره با ترجمه دریافت شد: ${surahWithTranslation.ayahs.length} آیه`);
+                
+                testApp.showMessage('آزمایش API موفقیت‌آمیز بود!', 'success');
+                
+            } catch (error) {
+                testApp.logResult(`❌ خطا در API: ${error.message}`);
+                testApp.showMessage('خطا در آزمایش API', 'error');
+            }
+        }
+
+        async function testSurahLoad() {
+            testApp.logResult('🔄 شروع آزمایش بارگذاری سوره‌ها...');
+            testApp.showMessage('در حال بارگذاری سوره‌ها...', 'info');
+
+            try {
+                const surahs = await window.quranAPI.getSurahs();
+                testApp.logResult(`✅ ${surahs.length} سوره بارگذاری شد`);
+                
+                surahs.slice(0, 5).forEach(surah => {
+                    testApp.logResult(`   📖 ${surah.number}. ${surah.name} - ${surah.numberOfAyahs} آیه`);
+                });
+                
+                testApp.showMessage('سوره‌ها با موفقیت بارگذاری شدند', 'success');
+                
+            } catch (error) {
+                testApp.logResult(`❌ خطا در بارگذاری: ${error.message}`);
+                testApp.showMessage('خطا در بارگذاری سوره‌ها', 'error');
+            }
+        }
+
+        async function testSearch() {
+            testApp.logResult('🔄 شروع آزمایش جستجو...');
+            testApp.showMessage('در حال آزمایش جستجو...', 'info');
+
+            try {
+                const results = await window.quranAPI.searchQuran('خدا', 'fa.fooladvand', 'all');
+                testApp.logResult(`✅ جستجو انجام شد: ${results.total} نتیجه یافت شد`);
+                
+                if (results.results.length > 0) {
+                    results.results.slice(0, 3).forEach(result => {
+                        testApp.logResult(`   🔍 سوره ${result.surah.number} آیه ${result.numberInSurah}`);
+                    });
+                }
+                
+                testApp.showMessage('جستجو با موفقیت انجام شد', 'success');
+                
+            } catch (error) {
+                testApp.logResult(`❌ خطا در جستجو: ${error.message}`);
+                testApp.showMessage('خطا در جستجو', 'error');
+            }
+        }
+
+        function testAudio() {
+            testApp.logResult('🔄 آزمایش سیستم صوتی...');
+            testApp.showMessage('در حال آزمایش صوت...', 'info');
+
+            try {
+                const audioUrl = window.quranAPI.getAyahAudioURL(1, 'ar.alafasy');
+                testApp.logResult(`✅ URL صوتی ایجاد شد: ${audioUrl}`);
+                
+                const audio = new Audio(audioUrl);
+                audio.volume = 0.5;
+                
+                audio.addEventListener('loadstart', () => {
+                    testApp.logResult('🎵 شروع بارگذاری صوت...');
+                });
+                
+                audio.addEventListener('canplay', () => {
+                    testApp.logResult('✅ صوت آماده پخش است');
+                    testApp.showMessage('صوت آماده پخش است', 'success');
+                });
+                
+                audio.addEventListener('error', (e) => {
+                    testApp.logResult(`❌ خطا در پخش صوت: ${e.message}`);
+                    testApp.showMessage('خطا در پخش صوت', 'error');
+                });
+                
+                audio.play().catch(error => {
+                    testApp.logResult(`❌ خطا در شروع پخش: ${error.message}`);
+                    testApp.showMessage('برای پخش خودکار با مرورگر تعامل کنید', 'warning');
+                });
+                
+            } catch (error) {
+                testApp.logResult(`❌ خطا در سیستم صوتی: ${error.message}`);
+                testApp.showMessage('خطا در سیستم صوتی', 'error');
+            }
+        }
+
+        function showSuccessNotification() {
+            testApp.showMessage('این یک پیام موفقیت است!', 'success');
+        }
+
+        function showErrorNotification() {
+            testApp.showMessage('این یک پیام خطا است!', 'error');
+        }
+
+        function showWarningNotification() {
+            testApp.showMessage('این یک پیام هشدار است!', 'warning');
+        }
+
+        function showInfoNotification() {
+            testApp.showMessage('این یک پیام اطلاعاتی است!', 'info');
+        }
+
+        function testVerseAudio(verseNumber) {
+            testApp.logResult(`🎵 درخواست پخش آیه ${verseNumber}`);
+            testApp.showMessage(`پخش آیه ${verseNumber}`, 'info');
+        }
+
+        function testFavorite(verseNumber) {
+            testApp.logResult(`❤️ اضافه/حذف آیه ${verseNumber} از علاقه‌مندی‌ها`);
+            testApp.showMessage('آیه به علاقه‌مندی‌ها اضافه شد', 'success');
+        }
+
+        function testCopy(verseNumber) {
+            navigator.clipboard.writeText('بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ\nبه نام خداوند بخشنده مهربان').then(() => {
+                testApp.logResult(`📋 آیه ${verseNumber} کپی شد`);
+                testApp.showMessage('آیه کپی شد', 'success');
+            }).catch(() => {
+                testApp.showMessage('خطا در کپی کردن', 'error');
+            });
+        }
+
+        function testShare(verseNumber) {
+            testApp.logResult(`🔗 اشتراک‌گذاری آیه ${verseNumber}`);
+            testApp.showMessage('لینک اشتراک‌گذاری آماده شد', 'info');
+        }
+
+        function clearTestResults() {
+            document.getElementById('api-results').innerHTML = '';
+            testApp.logResult('🗑️ نتایج آزمایش پاک شد');
+        }
+
+        // Theme toggle
+        document.getElementById('theme-toggle').addEventListener('click', function() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            
+            const icon = this.querySelector('i');
+            if (newTheme === 'dark') {
+                icon.className = 'fas fa-sun';
+            } else {
+                icon.className = 'fas fa-moon';
+            }
+            
+            testApp.showMessage(`تم ${newTheme === 'dark' ? 'تیره' : 'روشن'} فعال شد`, 'info');
+        });
+    </script>
+</body>
+</html>

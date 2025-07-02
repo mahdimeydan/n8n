@@ -1,83 +1,43 @@
-// ===== API MODULE =====
+// بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ
+// Quran API Handler - AlQuran.cloud Integration
 
 class QuranAPI {
     constructor() {
+        this.baseURL = CONFIG.api.baseURL;
+        this.audioCDN = CONFIG.api.audioCDN;
+        this.imageCDN = CONFIG.api.imageCDN;
         this.cache = new Map();
-        this.currentEndpoint = CONFIG.api.alQuranCloud;
-        this.retryCount = 0;
-        this.maxRetries = CONFIG.api.retryAttempts;
-        this.timeout = CONFIG.api.timeout;
+        this.cacheExpiry = CONFIG.performance.cacheExpiry;
     }
 
-    // ===== UTILITY METHODS =====
-
-    /**
-     * Create cache key for requests
-     */
-    createCacheKey(endpoint, params = {}) {
-        const paramString = Object.keys(params)
-            .sort()
-            .map(key => `${key}=${params[key]}`)
-            .join('&');
-        return `${endpoint}${paramString ? '?' + paramString : ''}`;
-    }
-
-    /**
-     * Check if data is cached and not expired
-     */
-    isCached(key) {
-        if (!CONFIG.performance.cacheEnabled) return false;
+    // ===== CORE REQUEST HANDLER =====
+    async makeRequest(endpoint, options = {}) {
+        const url = `${this.baseURL}${endpoint}`;
+        const cacheKey = `${url}_${JSON.stringify(options)}`;
         
-        const cached = this.cache.get(key);
-        if (!cached) return false;
-        
-        const now = Date.now();
-        const isExpired = now - cached.timestamp > CONFIG.performance.cacheExpiry;
-        
-        if (isExpired) {
-            this.cache.delete(key);
-            return false;
+        // Check cache first
+        if (this.cache.has(cacheKey)) {
+            const cached = this.cache.get(cacheKey);
+            if (Date.now() - cached.timestamp < this.cacheExpiry) {
+                console.log('📦 Cache hit:', endpoint);
+                return cached.data;
+            }
+            this.cache.delete(cacheKey);
         }
-        
-        return true;
-    }
-
-    /**
-     * Get cached data
-     */
-    getCached(key) {
-        const cached = this.cache.get(key);
-        return cached ? cached.data : null;
-    }
-
-    /**
-     * Set cache data
-     */
-    setCache(key, data) {
-        if (!CONFIG.performance.cacheEnabled) return;
-        
-        this.cache.set(key, {
-            data: data,
-            timestamp: Date.now()
-        });
-    }
-
-    /**
-     * Make HTTP request with timeout and retry logic
-     */
-    async makeRequest(url, options = {}) {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
         try {
+            console.log('🌐 API Request:', url);
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), CONFIG.api.timeout);
+            
             const response = await fetch(url, {
-                ...options,
                 signal: controller.signal,
                 headers: {
                     'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    ...options.headers
-                }
+                    'Content-Type': 'application/json'
+                },
+                ...options
             });
 
             clearTimeout(timeoutId);
@@ -87,453 +47,361 @@ class QuranAPI {
             }
 
             const data = await response.json();
-            return data;
+            
+            // Validate AlQuran.cloud response structure
+            if (data.code !== 200 || !data.data) {
+                throw new Error(data.message || 'Invalid API response');
+            }
+
+            // Cache successful response
+            this.cache.set(cacheKey, {
+                data: data.data,
+                timestamp: Date.now()
+            });
+
+            console.log('✅ API Success:', endpoint);
+            return data.data;
 
         } catch (error) {
-            clearTimeout(timeoutId);
+            console.error('❌ API Error:', error);
             
             if (error.name === 'AbortError') {
-                throw new Error(CONFIG.errors.timeout);
+                throw new Error('درخواست منقضی شد');
             }
             
-            // Retry logic
-            if (this.retryCount < this.maxRetries) {
-                this.retryCount++;
-                await this.delay(CONFIG.api.retryDelay * this.retryCount);
-                return this.makeRequest(url, options);
-            }
-            
+            throw new Error(`خطا در دریافت اطلاعات: ${error.message}`);
+        }
+    }
+
+    // ===== SURAH OPERATIONS =====
+    
+    // Get all surahs list
+    async getSurahs() {
+        try {
+            const data = await this.makeRequest('/surah');
+            return data.map(surah => ({
+                number: surah.number,
+                name: surah.name,
+                englishName: surah.englishName,
+                englishNameTranslation: surah.englishNameTranslation,
+                numberOfAyahs: surah.numberOfAyahs,
+                revelationType: surah.revelationType
+            }));
+        } catch (error) {
+            console.error('Error fetching surahs:', error);
             throw error;
         }
     }
 
-    /**
-     * Delay utility for retries
-     */
-    delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    /**
-     * Switch to fallback endpoint
-     */
-    switchToFallback() {
-        const fallbacks = CONFIG.api.fallback;
-        const currentIndex = fallbacks.indexOf(this.currentEndpoint);
-        const nextIndex = (currentIndex + 1) % fallbacks.length;
-        this.currentEndpoint = fallbacks[nextIndex];
-        this.retryCount = 0;
-    }
-
-    // ===== SURAHS API =====
-
-    /**
-     * Get all surahs list
-     */
-    async getSurahs() {
-        const cacheKey = this.createCacheKey('surahs');
-        
-        if (this.isCached(cacheKey)) {
-            return this.getCached(cacheKey);
-        }
-
+    // Get specific surah with verses
+    async getSurah(surahNumber, edition = CONFIG.api.editions.arabic) {
         try {
-            const url = `${this.currentEndpoint}/surah`;
-            const response = await this.makeRequest(url);
-            
-            let surahs;
-            if (response.data) {
-                // AlQuran.cloud format
-                surahs = response.data.map(surah => ({
-                    number: surah.number,
-                    name: surah.name,
-                    englishName: surah.englishName,
-                    englishNameTranslation: surah.englishNameTranslation,
-                    revelationType: surah.revelationType,
-                    numberOfAyahs: surah.numberOfAyahs
-                }));
-            } else {
-                // Fallback to local data
-                surahs = CONFIG.surahNames.map(surah => ({
-                    number: surah.number,
-                    name: surah.arabic,
-                    englishName: surah.transliteration,
-                    englishNameTranslation: surah.meaning,
-                    revelationType: surah.type,
-                    numberOfAyahs: surah.verses
-                }));
-            }
-
-            this.setCache(cacheKey, surahs);
-            return surahs;
-
-        } catch (error) {
-            console.error('Error fetching surahs:', error);
-            // Return local data as fallback
-            return CONFIG.surahNames.map(surah => ({
-                number: surah.number,
-                name: surah.arabic,
-                englishName: surah.transliteration,
-                englishNameTranslation: surah.meaning,
-                revelationType: surah.type,
-                numberOfAyahs: surah.verses
-            }));
-        }
-    }
-
-    /**
-     * Get specific surah
-     */
-    async getSurah(surahNumber, editions = ['quran-uthmani']) {
-        const cacheKey = this.createCacheKey(`surah/${surahNumber}`, { editions: editions.join(',') });
-        
-        if (this.isCached(cacheKey)) {
-            return this.getCached(cacheKey);
-        }
-
-        try {
-            let url;
-            if (editions.length === 1) {
-                url = `${this.currentEndpoint}/surah/${surahNumber}/${editions[0]}`;
-            } else {
-                url = `${this.currentEndpoint}/surah/${surahNumber}/editions/${editions.join(',')}`;
-            }
-
-            const response = await this.makeRequest(url);
-            this.setCache(cacheKey, response.data);
-            return response.data;
-
-        } catch (error) {
-            console.error(`Error fetching surah ${surahNumber}:`, error);
-            this.switchToFallback();
-            throw new Error(CONFIG.errors.apiError);
-        }
-    }
-
-    /**
-     * Get specific verse
-     */
-    async getVerse(surahNumber, verseNumber, editions = ['quran-uthmani']) {
-        const cacheKey = this.createCacheKey(`verse/${surahNumber}:${verseNumber}`, { editions: editions.join(',') });
-        
-        if (this.isCached(cacheKey)) {
-            return this.getCached(cacheKey);
-        }
-
-        try {
-            let url;
-            if (editions.length === 1) {
-                url = `${this.currentEndpoint}/ayah/${surahNumber}:${verseNumber}/${editions[0]}`;
-            } else {
-                url = `${this.currentEndpoint}/ayah/${surahNumber}:${verseNumber}/editions/${editions.join(',')}`;
-            }
-
-            const response = await this.makeRequest(url);
-            this.setCache(cacheKey, response.data);
-            return response.data;
-
-        } catch (error) {
-            console.error(`Error fetching verse ${surahNumber}:${verseNumber}:`, error);
-            this.switchToFallback();
-            throw new Error(CONFIG.errors.apiError);
-        }
-    }
-
-    /**
-     * Get multiple verses for a surah with translations
-     */
-    async getSurahWithTranslations(surahNumber, persianTranslation = 'fa.fooladvand', englishTranslation = 'en.asad') {
-        const editions = ['quran-uthmani', persianTranslation];
-        if (englishTranslation) {
-            editions.push(englishTranslation);
-        }
-
-        const cacheKey = this.createCacheKey(`surah_translations/${surahNumber}`, { editions: editions.join(',') });
-        
-        if (this.isCached(cacheKey)) {
-            return this.getCached(cacheKey);
-        }
-
-        try {
-            const response = await this.getSurah(surahNumber, editions);
-            
-            // Process response to organize by verse
-            let verses = [];
-            
-            if (Array.isArray(response)) {
-                // Multiple editions response
-                const arabicEdition = response.find(edition => edition.identifier === 'quran-uthmani');
-                const persianEdition = response.find(edition => edition.identifier === persianTranslation);
-                const englishEdition = englishTranslation ? response.find(edition => edition.identifier === englishTranslation) : null;
-
-                if (arabicEdition && arabicEdition.ayahs) {
-                    verses = arabicEdition.ayahs.map((ayah, index) => ({
-                        number: ayah.number,
-                        numberInSurah: ayah.numberInSurah,
-                        text: ayah.text,
-                        persianTranslation: persianEdition?.ayahs?.[index]?.text || '',
-                        englishTranslation: englishEdition?.ayahs?.[index]?.text || '',
-                        surah: {
-                            number: arabicEdition.number,
-                            name: arabicEdition.name,
-                            englishName: arabicEdition.englishName
-                        }
-                    }));
-                }
-            } else if (response.ayahs) {
-                // Single edition response
-                verses = response.ayahs.map(ayah => ({
+            const data = await this.makeRequest(`/surah/${surahNumber}/${edition}`);
+            return {
+                number: data.number,
+                name: data.name,
+                englishName: data.englishName,
+                englishNameTranslation: data.englishNameTranslation,
+                numberOfAyahs: data.numberOfAyahs,
+                revelationType: data.revelationType,
+                ayahs: data.ayahs.map(ayah => ({
                     number: ayah.number,
                     numberInSurah: ayah.numberInSurah,
                     text: ayah.text,
-                    persianTranslation: '',
-                    englishTranslation: '',
-                    surah: {
-                        number: response.number,
-                        name: response.name,
-                        englishName: response.englishName
-                    }
-                }));
+                    surah: ayah.surah,
+                    page: ayah.page,
+                    juz: ayah.juz,
+                    manzil: ayah.manzil,
+                    ruku: ayah.ruku,
+                    hizbQuarter: ayah.hizbQuarter,
+                    sajda: ayah.sajda || false
+                }))
+            };
+        } catch (error) {
+            console.error(`Error fetching surah ${surahNumber}:`, error);
+            throw error;
+        }
+    }
+
+    // Get surah with multiple editions (Arabic + Translation)
+    async getSurahWithTranslation(surahNumber, persianEdition = CONFIG.api.editions.persian) {
+        try {
+            const editions = `${CONFIG.api.editions.arabic},${persianEdition}`;
+            const data = await this.makeRequest(`/surah/${surahNumber}/editions/${editions}`);
+            
+            const arabicData = data[0];
+            const translationData = data[1];
+            
+            return {
+                number: arabicData.number,
+                name: arabicData.name,
+                englishName: arabicData.englishName,
+                englishNameTranslation: arabicData.englishNameTranslation,
+                numberOfAyahs: arabicData.numberOfAyahs,
+                revelationType: arabicData.revelationType,
+                ayahs: arabicData.ayahs.map((ayah, index) => ({
+                    number: ayah.number,
+                    numberInSurah: ayah.numberInSurah,
+                    text: ayah.text,
+                    translation: translationData.ayahs[index]?.text || '',
+                    surah: ayah.surah,
+                    page: ayah.page,
+                    juz: ayah.juz,
+                    manzil: ayah.manzil,
+                    ruku: ayah.ruku,
+                    hizbQuarter: ayah.hizbQuarter,
+                    sajda: ayah.sajda || false
+                }))
+            };
+        } catch (error) {
+            console.error(`Error fetching surah ${surahNumber} with translation:`, error);
+            throw error;
+        }
+    }
+
+    // ===== AYAH OPERATIONS =====
+    
+    // Get specific ayah
+    async getAyah(ayahNumber, edition = CONFIG.api.editions.arabic) {
+        try {
+            const data = await this.makeRequest(`/ayah/${ayahNumber}/${edition}`);
+            return {
+                number: data.number,
+                numberInSurah: data.numberInSurah,
+                text: data.text,
+                surah: {
+                    number: data.surah.number,
+                    name: data.surah.name,
+                    englishName: data.surah.englishName,
+                    englishNameTranslation: data.surah.englishNameTranslation,
+                    numberOfAyahs: data.surah.numberOfAyahs,
+                    revelationType: data.surah.revelationType
+                },
+                page: data.page,
+                juz: data.juz,
+                manzil: data.manzil,
+                ruku: data.ruku,
+                hizbQuarter: data.hizbQuarter,
+                sajda: data.sajda || false
+            };
+        } catch (error) {
+            console.error(`Error fetching ayah ${ayahNumber}:`, error);
+            throw error;
+        }
+    }
+
+    // Get ayah with translation
+    async getAyahWithTranslation(ayahNumber, persianEdition = CONFIG.api.editions.persian) {
+        try {
+            const editions = `${CONFIG.api.editions.arabic},${persianEdition}`;
+            const data = await this.makeRequest(`/ayah/${ayahNumber}/editions/${editions}`);
+            
+            const arabicData = data[0];
+            const translationData = data[1];
+            
+            return {
+                number: arabicData.number,
+                numberInSurah: arabicData.numberInSurah,
+                text: arabicData.text,
+                translation: translationData.text,
+                surah: arabicData.surah,
+                page: arabicData.page,
+                juz: arabicData.juz,
+                manzil: arabicData.manzil,
+                ruku: arabicData.ruku,
+                hizbQuarter: arabicData.hizbQuarter,
+                sajda: arabicData.sajda || false
+            };
+        } catch (error) {
+            console.error(`Error fetching ayah ${ayahNumber} with translation:`, error);
+            throw error;
+        }
+    }
+
+    // ===== SEARCH OPERATIONS =====
+    
+    // Search in Quran
+    async searchQuran(keyword, edition = CONFIG.api.editions.persian, surah = 'all') {
+        try {
+            if (!keyword || keyword.trim().length < 2) {
+                throw new Error('کلمه جستجو باید حداقل 2 حرف باشد');
             }
 
-            this.setCache(cacheKey, verses);
-            return verses;
-
-        } catch (error) {
-            console.error(`Error fetching surah ${surahNumber} with translations:`, error);
-            throw new Error(CONFIG.errors.apiError);
-        }
-    }
-
-    // ===== SEARCH API =====
-
-    /**
-     * Search in Quran
-     */
-    async search(query, surah = 'all', edition = 'fa.fooladvand') {
-        const cacheKey = this.createCacheKey('search', { query, surah, edition });
-        
-        if (this.isCached(cacheKey)) {
-            return this.getCached(cacheKey);
-        }
-
-        try {
-            const url = `${this.currentEndpoint}/search/${encodeURIComponent(query)}/${surah}/${edition}`;
-            const response = await this.makeRequest(url);
+            const cleanKeyword = encodeURIComponent(keyword.trim());
+            const data = await this.makeRequest(`/search/${cleanKeyword}/${surah}/${edition}`);
             
-            const results = response.data?.matches || [];
-            this.setCache(cacheKey, results);
-            return results;
-
-        } catch (error) {
-            console.error('Error searching:', error);
-            throw new Error(CONFIG.errors.apiError);
-        }
-    }
-
-    // ===== AUDIO API =====
-
-    /**
-     * Get audio URL for verse
-     */
-    getAudioUrl(surahNumber, verseNumber, reciter = 'ar.alafasy') {
-        const reciterConfig = CONFIG.audio.reciters[reciter];
-        if (!reciterConfig) {
-            console.error(`Reciter ${reciter} not found`);
-            return null;
-        }
-
-        // Format numbers with leading zeros
-        const formattedSurah = surahNumber.toString().padStart(3, '0');
-        const formattedVerse = verseNumber.toString().padStart(3, '0');
-        
-        return `${reciterConfig.baseUrl}/${formattedSurah}${formattedVerse}.mp3`;
-    }
-
-    /**
-     * Get audio URL for entire surah
-     */
-    getSurahAudioUrl(surahNumber, reciter = 'ar.alafasy') {
-        const reciterConfig = CONFIG.audio.reciters[reciter];
-        if (!reciterConfig) {
-            console.error(`Reciter ${reciter} not found`);
-            return null;
-        }
-
-        const formattedSurah = surahNumber.toString().padStart(3, '0');
-        return `${reciterConfig.baseUrl}/${formattedSurah}.mp3`;
-    }
-
-    // ===== ADDITIONAL APIS =====
-
-    /**
-     * Get available editions/translations
-     */
-    async getEditions() {
-        const cacheKey = this.createCacheKey('editions');
-        
-        if (this.isCached(cacheKey)) {
-            return this.getCached(cacheKey);
-        }
-
-        try {
-            const url = `${this.currentEndpoint}/edition`;
-            const response = await this.makeRequest(url);
-            
-            this.setCache(cacheKey, response.data);
-            return response.data;
-
-        } catch (error) {
-            console.error('Error fetching editions:', error);
-            // Return default translations
             return {
-                persian: CONFIG.translations.persian,
-                english: CONFIG.translations.english
+                query: keyword,
+                total: data.count,
+                results: data.matches.map(match => ({
+                    number: match.number,
+                    numberInSurah: match.numberInSurah,
+                    text: match.text,
+                    surah: {
+                        number: match.surah.number,
+                        name: match.surah.name,
+                        englishName: match.surah.englishName,
+                        englishNameTranslation: match.surah.englishNameTranslation
+                    }
+                }))
             };
+        } catch (error) {
+            console.error('Search error:', error);
+            throw error;
         }
     }
 
-    /**
-     * Get Juz (Para) data
-     */
-    async getJuz(juzNumber, edition = 'quran-uthmani') {
-        const cacheKey = this.createCacheKey(`juz/${juzNumber}`, { edition });
+    // ===== AUDIO OPERATIONS =====
+    
+    // Get audio URL for ayah
+    getAyahAudioURL(ayahNumber, reciter = CONFIG.audio.defaultReciter) {
+        const reciterConfig = CONFIG.audio.reciters[reciter];
+        if (!reciterConfig) {
+            console.warn(`Reciter ${reciter} not found, using default`);
+            reciter = CONFIG.audio.defaultReciter;
+        }
         
-        if (this.isCached(cacheKey)) {
-            return this.getCached(cacheKey);
-        }
+        const bitrate = reciterConfig.bitrate || CONFIG.audio.defaultBitrate;
+        const edition = reciterConfig.edition;
+        
+        return `${this.audioCDN}/${bitrate}/${edition}/${ayahNumber}.mp3`;
+    }
 
+    // Get audio URL for full surah
+    getSurahAudioURL(surahNumber, reciter = CONFIG.audio.defaultReciter) {
+        const reciterConfig = CONFIG.audio.reciters[reciter];
+        if (!reciterConfig) {
+            console.warn(`Reciter ${reciter} not found, using default`);
+            reciter = CONFIG.audio.defaultReciter;
+        }
+        
+        const bitrate = reciterConfig.bitrate || CONFIG.audio.defaultBitrate;
+        const edition = reciterConfig.edition;
+        
+        return `${this.audioCDN}-surah/${bitrate}/${edition}/${surahNumber}.mp3`;
+    }
+
+    // ===== EDITION OPERATIONS =====
+    
+    // Get available editions
+    async getEditions(format = 'text', language = 'fa') {
         try {
-            const url = `${this.currentEndpoint}/juz/${juzNumber}/${edition}`;
-            const response = await this.makeRequest(url);
-            
-            this.setCache(cacheKey, response.data);
-            return response.data;
-
-        } catch (error) {
-            console.error(`Error fetching juz ${juzNumber}:`, error);
-            throw new Error(CONFIG.errors.apiError);
-        }
-    }
-
-    /**
-     * Get random verse
-     */
-    async getRandomVerse(edition = 'quran-uthmani') {
-        try {
-            // Generate random surah and verse
-            const randomSurahNumber = Math.floor(Math.random() * 114) + 1;
-            const maxVerses = CONFIG.quran.versesCount[randomSurahNumber - 1];
-            const randomVerseNumber = Math.floor(Math.random() * maxVerses) + 1;
-
-            return await this.getVerse(randomSurahNumber, randomVerseNumber, [edition]);
-
-        } catch (error) {
-            console.error('Error fetching random verse:', error);
-            throw new Error(CONFIG.errors.apiError);
-        }
-    }
-
-    // ===== VALIDATION METHODS =====
-
-    /**
-     * Validate surah number
-     */
-    isValidSurah(surahNumber) {
-        return surahNumber >= 1 && surahNumber <= CONFIG.quran.totalSurahs;
-    }
-
-    /**
-     * Validate verse number for given surah
-     */
-    isValidVerse(surahNumber, verseNumber) {
-        if (!this.isValidSurah(surahNumber)) return false;
-        const maxVerses = CONFIG.quran.versesCount[surahNumber - 1];
-        return verseNumber >= 1 && verseNumber <= maxVerses;
-    }
-
-    /**
-     * Get surah info by number
-     */
-    getSurahInfo(surahNumber) {
-        if (!this.isValidSurah(surahNumber)) return null;
-        return CONFIG.surahNames[surahNumber - 1];
-    }
-
-    /**
-     * Get verse count for surah
-     */
-    getVerseCount(surahNumber) {
-        if (!this.isValidSurah(surahNumber)) return 0;
-        return CONFIG.quran.versesCount[surahNumber - 1];
-    }
-
-    // ===== ERROR HANDLING =====
-
-    /**
-     * Handle API errors gracefully
-     */
-    handleError(error, context = '') {
-        console.error(`API Error ${context}:`, error);
-
-        if (error.message.includes('network') || error.message.includes('fetch')) {
-            return CONFIG.errors.network;
-        } else if (error.message.includes('timeout')) {
-            return CONFIG.errors.timeout;
-        } else if (error.message.includes('404')) {
-            return CONFIG.errors.notFound;
-        } else {
-            return CONFIG.errors.apiError;
-        }
-    }
-
-    // ===== BATCH OPERATIONS =====
-
-    /**
-     * Get multiple verses in batch
-     */
-    async getVerseBatch(verses, editions = ['quran-uthmani']) {
-        const promises = verses.map(({ surah, verse }) => 
-            this.getVerse(surah, verse, editions)
-        );
-
-        try {
-            const results = await Promise.allSettled(promises);
-            return results.map((result, index) => ({
-                ...verses[index],
-                data: result.status === 'fulfilled' ? result.value : null,
-                error: result.status === 'rejected' ? result.reason : null
+            const data = await this.makeRequest(`/edition?format=${format}&language=${language}`);
+            return data.map(edition => ({
+                identifier: edition.identifier,
+                name: edition.name,
+                englishName: edition.englishName,
+                format: edition.format,
+                language: edition.language,
+                type: edition.type,
+                direction: edition.direction
             }));
         } catch (error) {
-            console.error('Error in batch verse fetch:', error);
-            throw new Error(CONFIG.errors.apiError);
+            console.error('Error fetching editions:', error);
+            throw error;
         }
     }
 
-    // ===== CACHE MANAGEMENT =====
-
-    /**
-     * Clear all cache
-     */
-    clearCache() {
-        this.cache.clear();
+    // ===== UTILITY METHODS =====
+    
+    // Get Quran metadata
+    async getMetadata() {
+        try {
+            return await this.makeRequest('/meta');
+        } catch (error) {
+            console.error('Error fetching metadata:', error);
+            throw error;
+        }
     }
 
-    /**
-     * Get cache stats
-     */
+    // Clear cache
+    clearCache() {
+        this.cache.clear();
+        console.log('🗑️ API Cache cleared');
+    }
+
+    // Get cache stats
     getCacheStats() {
         return {
             size: this.cache.size,
-            keys: Array.from(this.cache.keys())
+            entries: Array.from(this.cache.keys())
         };
+    }
+
+    // Preload data for better performance
+    async preloadSurah(surahNumber) {
+        try {
+            const promises = [
+                this.getSurah(surahNumber),
+                this.getSurahWithTranslation(surahNumber)
+            ];
+            
+            await Promise.all(promises);
+            console.log(`📥 Preloaded surah ${surahNumber}`);
+        } catch (error) {
+            console.warn(`Preload failed for surah ${surahNumber}:`, error);
+        }
+    }
+
+    // Validate surah number
+    validateSurahNumber(surahNumber) {
+        const num = parseInt(surahNumber);
+        return num >= 1 && num <= CONFIG.quran.totalSurahs;
+    }
+
+    // Validate ayah number
+    validateAyahNumber(ayahNumber) {
+        const num = parseInt(ayahNumber);
+        return num >= 1 && num <= CONFIG.quran.totalVerses;
+    }
+
+    // Get ayah number from surah and verse
+    getGlobalAyahNumber(surahNumber, verseNumber) {
+        const surahNum = parseInt(surahNumber);
+        const verseNum = parseInt(verseNumber);
+        
+        if (!this.validateSurahNumber(surahNum)) {
+            throw new Error('شماره سوره نامعتبر است');
+        }
+        
+        if (verseNum < 1 || verseNum > CONFIG.quran.versesCount[surahNum - 1]) {
+            throw new Error('شماره آیه نامعتبر است');
+        }
+        
+        let globalNumber = 0;
+        for (let i = 0; i < surahNum - 1; i++) {
+            globalNumber += CONFIG.quran.versesCount[i];
+        }
+        
+        return globalNumber + verseNum;
+    }
+
+    // Get surah and verse from global ayah number
+    getSurahAndVerse(globalAyahNumber) {
+        const ayahNum = parseInt(globalAyahNumber);
+        
+        if (!this.validateAyahNumber(ayahNum)) {
+            throw new Error('شماره آیه نامعتبر است');
+        }
+        
+        let currentSum = 0;
+        for (let i = 0; i < CONFIG.quran.versesCount.length; i++) {
+            currentSum += CONFIG.quran.versesCount[i];
+            if (ayahNum <= currentSum) {
+                const surahNumber = i + 1;
+                const verseNumber = ayahNum - (currentSum - CONFIG.quran.versesCount[i]);
+                return { surahNumber, verseNumber };
+            }
+        }
+        
+        throw new Error('آیه یافت نشد');
     }
 }
 
 // Create global API instance
-const quranAPI = new QuranAPI();
+window.quranAPI = new QuranAPI();
 
-// Export for use in other modules
+// Export for module systems
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { QuranAPI, quranAPI };
+    module.exports = QuranAPI;
 }

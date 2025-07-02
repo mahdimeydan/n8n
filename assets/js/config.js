@@ -1,70 +1,91 @@
 // ===== WEBSITE CONFIGURATION =====
 
 const CONFIG = {
-    // API Configuration
+    // API Configuration - AlQuran.cloud
     api: {
-        // Primary API endpoints
-        alQuranCloud: 'https://api.alquran.cloud/v1',
-        fawazAhmed: 'https://cdn.jsdelivr.net/gh/fawazahmed0/quran-api@1',
-        theQuranProject: 'https://api.quranapi.com',
+        // Primary API endpoint - AlQuran.cloud
+        baseURL: 'https://api.alquran.cloud/v1',
         
-        // Fallback endpoints
-        fallback: [
-            'https://api.alquran.cloud/v1',
-            'https://cdn.jsdelivr.net/gh/fawazahmed0/quran-api@1'
-        ],
+        // CDN endpoints
+        audioCDN: 'https://cdn.islamic.network/quran/audio',
+        imageCDN: 'https://cdn.islamic.network/quran/images',
+        
+        // Endpoints
+        endpoints: {
+            edition: '/edition',
+            quran: '/quran',
+            surah: '/surah',
+            ayah: '/ayah',
+            search: '/search',
+            meta: '/meta'
+        },
         
         // Request timeout (milliseconds)
-        timeout: 10000,
+        timeout: 15000,
         
         // Retry attempts
         retryAttempts: 3,
         
         // Delay between retries (milliseconds)
-        retryDelay: 1000
+        retryDelay: 1000,
+        
+        // Default editions for AlQuran.cloud
+        editions: {
+            arabic: 'quran-uthmani',
+            persian: 'fa.fooladvand',
+            english: 'en.asad',
+            audio: 'ar.alafasy'
+        }
     },
     
-    // Audio Configuration
+    // Audio Configuration - AlQuran.cloud CDN
     audio: {
-        // Reciters
+        // Reciters (using AlQuran.cloud editions)
         reciters: {
             'ar.alafasy': {
                 name: 'مشاری راشد العفاسی',
                 nameEn: 'Mishary Rashid Alafasy',
-                baseUrl: 'https://server8.mp3quran.net/afs'
+                edition: 'ar.alafasy',
+                bitrate: 128
             },
             'ar.abdulsamad': {
                 name: 'عبدالباسط عبدالصمد',
                 nameEn: 'Abdul Basit Abdul Samad',
-                baseUrl: 'https://server7.mp3quran.net/basit'
+                edition: 'ar.abdulsamad',
+                bitrate: 128
             },
             'ar.husary': {
                 name: 'محمود خلیل الحصری',
                 nameEn: 'Mahmoud Khalil Al-Hussary',
-                baseUrl: 'https://server8.mp3quran.net/husary'
+                edition: 'ar.husary',
+                bitrate: 128
             },
             'ar.minshawi': {
                 name: 'محمد صدیق المنشاوی',
                 nameEn: 'Mohammad Siddiq Al-Minshawi',
-                baseUrl: 'https://server10.mp3quran.net/minsh'
+                edition: 'ar.minshawi',
+                bitrate: 128
             },
             'ar.sudais': {
                 name: 'عبدالرحمن السدیس',
                 nameEn: 'Abdul Rahman Al-Sudais',
-                baseUrl: 'https://server11.mp3quran.net/sds'
+                edition: 'ar.sudais',
+                bitrate: 128
             },
             'ar.shuraim': {
                 name: 'سعود الشریم',
                 nameEn: 'Saud Al-Shuraim',
-                baseUrl: 'https://server8.mp3quran.net/shur'
+                edition: 'ar.shuraim',
+                bitrate: 128
             }
         },
         
         // Default settings
         defaultReciter: 'ar.alafasy',
+        defaultBitrate: 128,
         defaultVolume: 0.7,
         defaultSpeed: 1.0,
-        autoplay: true,
+        autoplay: false,
         preload: 'metadata'
     },
     

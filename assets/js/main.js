@@ -309,13 +309,27 @@ class QuranWebsite {
 
     async loadSurahs() {
         try {
-            const surahs = await quranAPI.getSurahs();
+            this.showLoading('در حال بارگذاری سوره‌ها...');
+            const surahs = await window.quranAPI.getSurahs();
+            console.log('✅ Loaded surahs:', surahs.length);
             this.surahs = surahs;
             return surahs;
         } catch (error) {
-            console.error('Error loading surahs:', error);
-            this.showError('خطا در بارگذاری فهرست سوره‌ها');
-            return [];
+            console.error('❌ Error loading surahs:', error);
+            // Fallback to local data
+            const localSurahs = CONFIG.surahNames.map(surah => ({
+                number: surah.number,
+                name: surah.arabic,
+                englishName: surah.transliteration,
+                englishNameTranslation: surah.meaning,
+                revelationType: surah.type,
+                numberOfAyahs: surah.verses
+            }));
+            this.surahs = localSurahs;
+            this.showMessage('استفاده از اطلاعات محلی', 'warning');
+            return localSurahs;
+        } finally {
+            this.hideLoading();
         }
     }
 
@@ -437,57 +451,56 @@ class QuranWebsite {
 
     async openSurah(surahNumber) {
         try {
-            this.showLoading();
+            this.showLoading(`در حال بارگذاری سوره ${surahNumber}...`);
             
-            const verses = await quranAPI.getSurahWithTranslations(
+            // Get surah with Persian translation
+            const surahData = await window.quranAPI.getSurahWithTranslation(
                 surahNumber,
-                this.settings.persianTranslation,
-                this.settings.showEnglish ? this.settings.englishTranslation : null
+                this.settings.persianTranslation || CONFIG.api.editions.persian
             );
             
             this.currentSurah = surahNumber;
-            this.currentVerses = verses;
+            this.currentSurahData = surahData;
             
-            this.showVerseReader(verses);
-            this.hideLoading();
+            this.showVerseReader(surahData);
+            console.log('✅ Opened surah:', surahNumber);
             
         } catch (error) {
-            console.error('Error opening surah:', error);
+            console.error('❌ Error opening surah:', error);
             this.showError('خطا در بارگذاری سوره');
+        } finally {
             this.hideLoading();
         }
     }
 
-    showVerseReader(verses) {
-        // Hide other sections
-        const sections = document.querySelectorAll('main > section');
-        sections.forEach(section => {
-            section.style.display = 'none';
-        });
-
-        // Show verse reader
-        const readerSection = document.getElementById('verse-reader');
-        readerSection.style.display = 'block';
-        this.currentSection = 'verse-reader';
+    showVerseReader(surahData) {
+        // Navigate to verse-reader section
+        this.navigateToSection('verse-reader');
 
         // Update surah info
-        this.updateSurahInfo(verses[0].surah);
+        this.updateSurahInfo(surahData);
         
         // Render verses
-        this.renderVerses(verses);
+        this.renderVerses(surahData.ayahs);
         
         // Setup audio
         this.setupVerseAudio();
     }
 
-    updateSurahInfo(surahInfo) {
+    updateSurahInfo(surahData) {
         const surahName = document.getElementById('current-surah-name');
         const surahInfoEl = document.getElementById('current-surah-info');
         
         if (surahName && surahInfoEl) {
-            const localInfo = CONFIG.surahNames[surahInfo.number - 1];
-            surahName.textContent = localInfo?.persian || surahInfo.englishName;
-            surahInfoEl.textContent = `${surahInfo.number} • ${this.currentVerses.length} آیه`;
+            const localInfo = CONFIG.surahNames[surahData.number - 1];
+            surahName.textContent = localInfo?.persian || surahData.englishName;
+            surahInfoEl.textContent = `${surahData.number} • ${surahData.numberOfAyahs} آیه • ${surahData.revelationType === 'Meccan' ? 'مکی' : 'مدنی'}`;
+        }
+        
+        // Update header with surah name
+        const pageTitle = document.querySelector('title');
+        if (pageTitle) {
+            pageTitle.textContent = `${localInfo?.persian || surahData.englishName} - قرآن کریم`;
         }
     }
 
@@ -510,6 +523,7 @@ class QuranWebsite {
         const card = document.createElement('div');
         card.className = 'verse-card scroll-reveal';
         card.setAttribute('data-verse-number', verse.numberInSurah);
+        card.setAttribute('data-global-number', verse.number);
         card.style.animationDelay = `${index * 0.1}s`;
 
         const isFavorited = this.isVerseFavorited(verse.number);
@@ -518,7 +532,7 @@ class QuranWebsite {
             <div class="verse-header">
                 <div class="verse-number">${verse.numberInSurah}</div>
                 <div class="verse-actions">
-                    <button class="verse-action-btn" onclick="app.playVerse(${verse.surah.number}, ${verse.numberInSurah})" title="پخش">
+                    <button class="verse-action-btn" onclick="app.playVerse(${verse.number})" title="پخش">
                         <i class="fas fa-play"></i>
                     </button>
                     <button class="verse-action-btn ${isFavorited ? 'favorited' : ''}" onclick="app.toggleVerseFavorite(${verse.number})" title="علاقه‌مندی">
@@ -533,16 +547,16 @@ class QuranWebsite {
                 </div>
             </div>
             <div class="verse-text">
-                <div class="verse-arabic" style="font-size: ${this.settings.arabicFontSize}px">
+                <div class="verse-arabic" style="font-size: ${this.settings.arabicFontSize || 24}px">
                     ${verse.text}
                 </div>
-                ${verse.persianTranslation ? `
-                    <div class="verse-translation" style="font-size: ${this.settings.persianFontSize}px">
-                        ${verse.persianTranslation}
+                ${verse.translation ? `
+                    <div class="verse-translation" style="font-size: ${this.settings.persianFontSize || 16}px">
+                        ${verse.translation}
                     </div>
                 ` : ''}
                 ${verse.englishTranslation && this.settings.showEnglish ? `
-                    <div class="verse-english" style="font-size: ${this.settings.englishFontSize}px">
+                    <div class="verse-english" style="font-size: ${this.settings.englishFontSize || 14}px">
                         ${verse.englishTranslation}
                     </div>
                 ` : ''}
@@ -552,34 +566,180 @@ class QuranWebsite {
         return card;
     }
 
+    // ===== AUDIO METHODS =====
+
+    playVerse(globalVerseNumber) {
+        try {
+            const audioUrl = window.quranAPI.getAyahAudioURL(
+                globalVerseNumber,
+                this.settings.reciter || CONFIG.audio.defaultReciter
+            );
+            
+            console.log('🎵 Playing verse audio:', audioUrl);
+            
+            // Stop any currently playing audio
+            this.stopAudio();
+            
+            // Create new audio element
+            this.currentAudio = new Audio(audioUrl);
+            this.currentAudio.volume = this.settings.volume || CONFIG.audio.defaultVolume;
+            this.currentAudio.playbackRate = this.settings.audioSpeed || CONFIG.audio.defaultSpeed;
+            
+            // Add event listeners
+            this.currentAudio.addEventListener('loadstart', () => {
+                this.showMessage('در حال بارگذاری صوت...', 'info');
+            });
+            
+            this.currentAudio.addEventListener('canplay', () => {
+                this.hideLoading();
+            });
+            
+            this.currentAudio.addEventListener('play', () => {
+                this.updateAudioUI(globalVerseNumber, 'playing');
+            });
+            
+            this.currentAudio.addEventListener('pause', () => {
+                this.updateAudioUI(globalVerseNumber, 'paused');
+            });
+            
+            this.currentAudio.addEventListener('ended', () => {
+                this.updateAudioUI(globalVerseNumber, 'ended');
+                this.currentAudio = null;
+            });
+            
+            this.currentAudio.addEventListener('error', (e) => {
+                console.error('Audio error:', e);
+                this.showError('خطا در پخش صوت');
+                this.currentAudio = null;
+            });
+            
+            // Play the audio
+            this.currentAudio.play().catch(error => {
+                console.error('Audio play error:', error);
+                this.showError('خطا در پخش صوت');
+            });
+            
+        } catch (error) {
+            console.error('Error playing verse:', error);
+            this.showError('خطا در پخش آیه');
+        }
+    }
+
+    playSurah(surahNumber) {
+        try {
+            const audioUrl = window.quranAPI.getSurahAudioURL(
+                surahNumber,
+                this.settings.reciter || CONFIG.audio.defaultReciter
+            );
+            
+            console.log('🎵 Playing surah audio:', audioUrl);
+            
+            // Stop any currently playing audio
+            this.stopAudio();
+            
+            // Create new audio element
+            this.currentAudio = new Audio(audioUrl);
+            this.currentAudio.volume = this.settings.volume || CONFIG.audio.defaultVolume;
+            this.currentAudio.playbackRate = this.settings.audioSpeed || CONFIG.audio.defaultSpeed;
+            
+            // Add event listeners
+            this.currentAudio.addEventListener('loadstart', () => {
+                this.showMessage('در حال بارگذاری صوت سوره...', 'info');
+            });
+            
+            this.currentAudio.addEventListener('canplay', () => {
+                this.hideLoading();
+            });
+            
+            this.currentAudio.addEventListener('error', (e) => {
+                console.error('Surah audio error:', e);
+                this.showError('خطا در پخش سوره');
+                this.currentAudio = null;
+            });
+            
+            // Play the audio
+            this.currentAudio.play().catch(error => {
+                console.error('Surah audio play error:', error);
+                this.showError('خطا در پخش سوره');
+            });
+            
+        } catch (error) {
+            console.error('Error playing surah:', error);
+            this.showError('خطا در پخش سوره');
+        }
+    }
+
+    stopAudio() {
+        if (this.currentAudio) {
+            this.currentAudio.pause();
+            this.currentAudio.currentTime = 0;
+            this.currentAudio = null;
+        }
+        
+        // Reset all audio UI states
+        const playButtons = document.querySelectorAll('.verse-action-btn i.fa-pause');
+        playButtons.forEach(btn => {
+            btn.className = 'fas fa-play';
+        });
+    }
+
+    updateAudioUI(verseNumber, state) {
+        const playButton = document.querySelector(`[onclick*="playVerse(${verseNumber})"] i`);
+        if (playButton) {
+            switch (state) {
+                case 'playing':
+                    playButton.className = 'fas fa-pause';
+                    break;
+                case 'paused':
+                case 'ended':
+                    playButton.className = 'fas fa-play';
+                    break;
+            }
+        }
+    }
+
+    setupVerseAudio() {
+        // Add audio control event listeners if needed
+        console.log('🎵 Audio system ready');
+    }
+
     // ===== UTILITY METHODS =====
 
     async performSearch(query) {
-        if (!query.trim()) return;
+        if (!query.trim() || query.trim().length < 2) {
+            this.showMessage('لطفاً حداقل 2 حرف برای جستجو وارد کنید', 'warning');
+            return;
+        }
 
         try {
-            this.showLoading();
+            this.showLoading(`در حال جستجو برای "${query}"...`);
             
-            const results = await quranAPI.search(
-                query,
-                'all',
-                this.settings.persianTranslation
+            const results = await window.quranAPI.searchQuran(
+                query.trim(),
+                this.settings.persianTranslation || CONFIG.api.editions.persian,
+                'all'
             );
+            
+            console.log('🔍 Search results:', results);
             
             this.displaySearchResults(results, query);
             this.addToSearchHistory(query);
-            this.hideLoading();
+            this.navigateToSection('search');
             
         } catch (error) {
-            console.error('Error searching:', error);
+            console.error('❌ Search error:', error);
             this.showError('خطا در جستجو');
+        } finally {
             this.hideLoading();
         }
     }
 
-    displaySearchResults(results, query) {
+    displaySearchResults(searchData, query) {
         const container = document.getElementById('search-results');
         if (!container) return;
+
+        const results = searchData.results || [];
+        const total = searchData.total || 0;
 
         if (results.length === 0) {
             container.innerHTML = `
@@ -594,21 +754,27 @@ class QuranWebsite {
 
         container.innerHTML = `
             <div class="search-results-header">
-                <h3>${results.length} نتیجه برای "${query}"</h3>
+                <h3>${total} نتیجه برای "${query}"</h3>
             </div>
             <div class="search-results-list">
                 ${results.map(result => this.createSearchResultCard(result)).join('')}
             </div>
         `;
+        
+        // Add animation to results
+        this.addScrollRevealAnimations();
     }
 
     createSearchResultCard(result) {
+        const surahInfo = CONFIG.surahNames[result.surah.number - 1];
+        
         return `
-            <div class="search-result-card" onclick="app.openVerse(${result.surah.number}, ${result.numberInSurah})">
+            <div class="search-result-card scroll-reveal" onclick="app.openVerse(${result.surah.number}, ${result.numberInSurah})">
                 <div class="result-header">
                     <span class="result-reference">
-                        ${CONFIG.surahNames[result.surah.number - 1]?.persian} • آیه ${result.numberInSurah}
+                        ${surahInfo?.persian || result.surah.englishName} • آیه ${result.numberInSurah}
                     </span>
+                    <span class="result-surah-number">${result.surah.number}</span>
                 </div>
                 <div class="result-text">
                     ${result.text}
@@ -619,19 +785,25 @@ class QuranWebsite {
 
     async openRandomVerse() {
         try {
-            this.showLoading();
+            this.showLoading('در حال انتخاب آیه تصادفی...');
             
-            const verse = await quranAPI.getRandomVerse('quran-uthmani');
+            // Generate random surah and verse
+            const randomSurahNumber = Math.floor(Math.random() * 114) + 1;
+            const maxVerses = CONFIG.quran.versesCount[randomSurahNumber - 1];
+            const randomVerseNumber = Math.floor(Math.random() * maxVerses) + 1;
+            
+            console.log(`🎲 Random verse: Surah ${randomSurahNumber}, Verse ${randomVerseNumber}`);
+            
             // Navigate to the verse in its surah context
-            await this.openSurah(verse.surah.number);
-            // Scroll to the specific verse
-            this.scrollToVerse(verse.numberInSurah);
+            await this.openSurah(randomSurahNumber);
             
-            this.hideLoading();
+            // Scroll to the specific verse
+            this.scrollToVerse(randomVerseNumber);
             
         } catch (error) {
-            console.error('Error opening random verse:', error);
+            console.error('❌ Error opening random verse:', error);
             this.showError('خطا در بارگذاری آیه تصادفی');
+        } finally {
             this.hideLoading();
         }
     }
@@ -788,11 +960,21 @@ class QuranWebsite {
 
     // ===== UI UTILITIES =====
 
-    showLoading() {
+    showLoading(message = 'در حال بارگذاری...') {
         this.isLoading = true;
+        
         // Show loading spinner or overlay
         const loadingElements = document.querySelectorAll('.loading-dots');
         loadingElements.forEach(el => el.style.display = 'inline-block');
+        
+        // Update loading message if element exists
+        const loadingText = document.getElementById('loading-text');
+        if (loadingText) {
+            loadingText.textContent = message;
+        }
+        
+        // Show loading notification
+        this.showMessage(message, 'info');
     }
 
     hideLoading() {
@@ -804,9 +986,28 @@ class QuranWebsite {
     showMessage(message, type = 'success') {
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
+        
+        let icon;
+        switch (type) {
+            case 'success':
+                icon = 'fa-check-circle';
+                break;
+            case 'error':
+                icon = 'fa-exclamation-circle';
+                break;
+            case 'warning':
+                icon = 'fa-exclamation-triangle';
+                break;
+            case 'info':
+                icon = 'fa-info-circle';
+                break;
+            default:
+                icon = 'fa-info-circle';
+        }
+        
         notification.innerHTML = `
             <div class="notification-content">
-                <i class="fas ${type === 'success' ? 'fa-check' : 'fa-exclamation'}"></i>
+                <i class="fas ${icon}"></i>
                 <span>${message}</span>
             </div>
         `;
@@ -820,9 +1021,11 @@ class QuranWebsite {
         setTimeout(() => {
             notification.classList.add('notification-exit');
             setTimeout(() => {
-                document.body.removeChild(notification);
+                if (document.body.contains(notification)) {
+                    document.body.removeChild(notification);
+                }
             }, 300);
-        }, 3000);
+        }, type === 'info' ? 2000 : 3000);
     }
 
     showError(message) {
@@ -904,6 +1107,190 @@ class QuranWebsite {
                 console.error('Error saving search history:', error);
             }
         }
+    }
+
+    // ===== ADDITIONAL UTILITY METHODS =====
+
+    copyVerse(globalVerseNumber) {
+        try {
+            const verseCard = document.querySelector(`[data-global-number="${globalVerseNumber}"]`);
+            if (verseCard) {
+                const arabicText = verseCard.querySelector('.verse-arabic').textContent;
+                const translationText = verseCard.querySelector('.verse-translation')?.textContent || '';
+                
+                const textToCopy = translationText ? 
+                    `${arabicText}\n\n${translationText}` : 
+                    arabicText;
+                
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    this.showMessage('آیه کپی شد');
+                }).catch(error => {
+                    console.error('Copy error:', error);
+                    this.showError('خطا در کپی کردن');
+                });
+            }
+        } catch (error) {
+            console.error('Error copying verse:', error);
+            this.showError('خطا در کپی کردن آیه');
+        }
+    }
+
+    shareVerse(globalVerseNumber) {
+        try {
+            const surahAndVerse = window.quranAPI.getSurahAndVerse(globalVerseNumber);
+            const surahInfo = CONFIG.surahNames[surahAndVerse.surahNumber - 1];
+            
+            const shareText = `سوره ${surahInfo?.persian} - آیه ${surahAndVerse.verseNumber}`;
+            const shareUrl = `${window.location.origin}${window.location.pathname}#surah-${surahAndVerse.surahNumber}-verse-${surahAndVerse.verseNumber}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: shareText,
+                    text: shareText,
+                    url: shareUrl
+                }).then(() => {
+                    this.showMessage('با موفقیت به اشتراک گذاشته شد');
+                }).catch(error => {
+                    console.error('Share error:', error);
+                    this.copyToClipboard(shareUrl);
+                });
+            } else {
+                this.copyToClipboard(shareUrl);
+            }
+        } catch (error) {
+            console.error('Error sharing verse:', error);
+            this.showError('خطا در اشتراک‌گذاری آیه');
+        }
+    }
+
+    copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            this.showMessage('لینک کپی شد');
+        }).catch(error => {
+            console.error('Clipboard error:', error);
+            this.showError('خطا در کپی کردن لینک');
+        });
+    }
+
+    openVerse(surahNumber, verseNumber) {
+        // Open the surah and scroll to the verse
+        this.openSurah(surahNumber).then(() => {
+            this.scrollToVerse(verseNumber);
+        }).catch(error => {
+            console.error('Error opening verse:', error);
+            this.showError('خطا در بارگذاری آیه');
+        });
+    }
+
+    toggleSurahFavorite(surahNumber) {
+        // This would be for favoriting entire surahs
+        // Can be implemented later if needed
+        this.showMessage('این ویژگی به زودی اضافه خواهد شد', 'info');
+    }
+
+    focusSearch() {
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+        }
+    }
+
+    closeAllOverlays() {
+        // Close any open modals, dropdowns, etc.
+        const navMenu = document.getElementById('nav-menu');
+        const navToggle = document.getElementById('nav-toggle');
+        
+        if (navMenu && navToggle) {
+            navMenu.classList.remove('active');
+            navToggle.classList.remove('active');
+        }
+    }
+
+    nextVerse() {
+        // Navigate to next verse in current surah
+        if (this.currentSurahData && this.currentVerse) {
+            const nextVerse = this.currentVerse + 1;
+            if (nextVerse <= this.currentSurahData.numberOfAyahs) {
+                this.scrollToVerse(nextVerse);
+            }
+        }
+    }
+
+    previousVerse() {
+        // Navigate to previous verse in current surah
+        if (this.currentSurahData && this.currentVerse) {
+            const prevVerse = this.currentVerse - 1;
+            if (prevVerse >= 1) {
+                this.scrollToVerse(prevVerse);
+            }
+        }
+    }
+
+    toggleAudioPlayback() {
+        if (this.currentAudio) {
+            if (this.currentAudio.paused) {
+                this.currentAudio.play();
+            } else {
+                this.currentAudio.pause();
+            }
+        }
+    }
+
+    pauseAudio() {
+        if (this.currentAudio && !this.currentAudio.paused) {
+            this.currentAudio.pause();
+        }
+    }
+
+    toggleGlobalAudio() {
+        // Toggle global audio settings
+        this.settings.audioEnabled = !this.settings.audioEnabled;
+        this.saveSettings();
+        
+        if (!this.settings.audioEnabled) {
+            this.stopAudio();
+            this.showMessage('صوت غیرفعال شد');
+        } else {
+            this.showMessage('صوت فعال شد');
+        }
+    }
+
+    setupSearchSection() {
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.focus();
+        }
+    }
+
+    loadFavoritesSection() {
+        // Load and display favorites
+        const container = document.getElementById('favorites-list');
+        if (container) {
+            if (this.favorites.length === 0) {
+                container.innerHTML = `
+                    <div class="no-content">
+                        <i class="fas fa-heart"></i>
+                        <h3>هیچ آیه‌ای در علاقه‌مندی‌ها نیست</h3>
+                        <p>آیات مورد علاقه خود را اضافه کنید</p>
+                    </div>
+                `;
+            } else {
+                // Load favorite verses and display them
+                this.loadFavoriteVerses();
+            }
+        }
+    }
+
+    async loadFavoriteVerses() {
+        // This would load the actual verse data for favorites
+        // Implementation can be added later
+        this.showMessage('این بخش در حال توسعه است', 'info');
+    }
+
+    loadSettingsSection() {
+        // Load settings interface
+        this.showMessage('بخش تنظیمات در حال توسعه است', 'info');
     }
 }
 
