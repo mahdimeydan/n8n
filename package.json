@@ -1,0 +1,55 @@
+{
+  "name": "quran-website",
+  "version": "1.0.0",
+  "description": "وب سایت جامع قرآن کریم با امکانات کامل - Comprehensive Holy Quran website with complete features",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "serve": "python3 -m http.server 8000",
+    "dev": "live-server .",
+    "build": "echo 'No build process required for static site'",
+    "deploy": "echo 'Ready to deploy to any web hosting service'"
+  },
+  "keywords": [
+    "quran",
+    "قرآن",
+    "holy-quran",
+    "islamic",
+    "website",
+    "persian",
+    "arabic",
+    "translation",
+    "audio",
+    "recitation"
+  ],
+  "author": {
+    "name": "Quran Website Developer",
+    "email": "info@quran-website.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/quran-website.git"
+  },
+  "homepage": "https://YOUR_USERNAME.github.io/quran-website",
+  "bugs": {
+    "url": "https://github.com/YOUR_USERNAME/quran-website/issues"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "not ie <= 11"
+  ],
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "files": [
+    "index.html",
+    "assets/",
+    "README.md"
+  ]
+}

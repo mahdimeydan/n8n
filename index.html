@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="وب سایت قرآن کریم - مطالعه و گوش دادن به قرآن با ترجمه فارسی">
+    <meta name="keywords" content="قرآن، قرآن کریم، ترجمه قرآن، تلاوت قرآن، Quran, Holy Quran">
+    <meta name="author" content="Quran Website">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="قرآن کریم - وب سایت جامع قرآنی">
+    <meta property="og:description" content="مطالعه و گوش دادی به قرآن کریم با ترجمه فارسی و امکانات کامل">
+    <meta property="og:type" content="website">
+    
+    <title>قرآن کریم - وب سایت جامع قرآنی</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+    <link rel="stylesheet" href="assets/css/animations.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <h2>بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</h2>
+            <p>در حال بارگذاری...</p>
+        </div>
+    </div>
+
+    <!-- Navigation Header -->
+    <header class="main-header" id="main-header">
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <i class="fas fa-moon"></i>
+                    <span>قرآن کریم</span>
+                </div>
+                
+                <div class="nav-menu" id="nav-menu">
+                    <a href="#home" class="nav-link active">صفحه اصلی</a>
+                    <a href="#surahs" class="nav-link">سوره‌ها</a>
+                    <a href="#search" class="nav-link">جستجو</a>
+                    <a href="#favorites" class="nav-link">علاقه‌مندی‌ها</a>
+                    <a href="#settings" class="nav-link">تنظیمات</a>
+                </div>
+                
+                <div class="nav-actions">
+                    <button class="theme-toggle" id="theme-toggle" title="تغییر پوسته">
+                        <i class="fas fa-sun"></i>
+                    </button>
+                    <button class="audio-control" id="global-audio-toggle" title="کنترل صدا">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                    <button class="nav-toggle" id="nav-toggle">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section id="home" class="hero-section">
+            <div class="hero-container">
+                <div class="hero-content">
+                    <h1 class="hero-title">
+                        <span class="arabic-text">بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</span>
+                        <span class="persian-text">به نام خداوند بخشنده مهربان</span>
+                    </h1>
+                    <p class="hero-description">
+                        وب سایت جامع قرآن کریم با امکانات کامل شامل ترجمه فارسی، تلاوت آنلاین، جستجو پیشرفته و بسیاری امکانات دیگر
+                    </p>
+                    <div class="hero-actions">
+                        <button class="btn btn-primary" onclick="scrollToSection('surahs')">
+                            <i class="fas fa-book-open"></i>
+                            شروع مطالعه
+                        </button>
+                        <button class="btn btn-secondary" onclick="openRandomVerse()">
+                            <i class="fas fa-random"></i>
+                            آیه تصادفی
+                        </button>
+                    </div>
+                </div>
+                <div class="hero-illustration">
+                    <div class="floating-elements">
+                        <div class="floating-element"></div>
+                        <div class="floating-element"></div>
+                        <div class="floating-element"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Stats -->
+        <section class="stats-section">
+            <div class="container">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 class="stat-number">114</h3>
+                            <p class="stat-label">سوره</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-quote-right"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 class="stat-number">6236</h3>
+                            <p class="stat-label">آیه</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-bookmark"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 class="stat-number">30</h3>
+                            <p class="stat-label">پاره</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-language"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 class="stat-number">90+</h3>
+                            <p class="stat-label">ترجمه</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Search Section -->
+        <section id="search" class="search-section">
+            <div class="container">
+                <div class="search-header">
+                    <h2>جستجو در قرآن کریم</h2>
+                    <p>جستجوی پیشرفته در متن قرآن و ترجمه‌ها</p>
+                </div>
+                
+                <div class="search-container">
+                    <div class="search-box">
+                        <input type="text" id="search-input" placeholder="جستجو کنید..." class="search-input">
+                        <button class="search-btn" id="search-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="search-filters">
+                        <select id="search-type" class="search-filter">
+                            <option value="all">همه موارد</option>
+                            <option value="arabic">متن عربی</option>
+                            <option value="translation">ترجمه فارسی</option>
+                            <option value="surah">نام سوره</option>
+                        </select>
+                        
+                        <select id="search-surah" class="search-filter">
+                            <option value="all">همه سوره‌ها</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="search-results" class="search-results"></div>
+            </div>
+        </section>
+
+        <!-- Surahs Section -->
+        <section id="surahs" class="surahs-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>سوره‌های قرآن کریم</h2>
+                    <div class="view-options">
+                        <button class="view-btn active" data-view="grid">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button class="view-btn" data-view="list">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="surahs-filters">
+                    <button class="filter-btn active" data-filter="all">همه</button>
+                    <button class="filter-btn" data-filter="meccan">مکی</button>
+                    <button class="filter-btn" data-filter="medinan">مدنی</button>
+                </div>
+                
+                <div id="surahs-container" class="surahs-grid">
+                    <!-- Surahs will be loaded here -->
+                </div>
+                
+                <div class="load-more-container">
+                    <button id="load-more-surahs" class="btn btn-outline">نمایش بیشتر</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Verse Reader Section -->
+        <section id="verse-reader" class="verse-reader-section" style="display: none;">
+            <div class="container">
+                <div class="reader-header">
+                    <div class="reader-nav">
+                        <button class="btn btn-ghost" onclick="closeVerseReader()">
+                            <i class="fas fa-arrow-right"></i>
+                            بازگشت
+                        </button>
+                        <div class="surah-info">
+                            <h2 id="current-surah-name"></h2>
+                            <span id="current-surah-info"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="reader-controls">
+                        <button class="control-btn" id="play-pause-btn" title="پخش/توقف">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <button class="control-btn" id="prev-verse-btn" title="آیه قبلی">
+                            <i class="fas fa-step-backward"></i>
+                        </button>
+                        <button class="control-btn" id="next-verse-btn" title="آیه بعدی">
+                            <i class="fas fa-step-forward"></i>
+                        </button>
+                        <div class="volume-control">
+                            <i class="fas fa-volume-down"></i>
+                            <input type="range" id="volume-slider" min="0" max="100" value="50">
+                            <i class="fas fa-volume-up"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="verse-container">
+                    <div id="verses-list" class="verses-list">
+                        <!-- Verses will be loaded here -->
+                    </div>
+                </div>
+                
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Favorites Section -->
+        <section id="favorites" class="favorites-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>آیات علاقه‌مندی</h2>
+                    <button class="btn btn-ghost" onclick="clearAllFavorites()">
+                        <i class="fas fa-trash"></i>
+                        پاک کردن همه
+                    </button>
+                </div>
+                
+                <div id="favorites-container" class="favorites-grid">
+                    <!-- Favorite verses will be loaded here -->
+                </div>
+                
+                <div id="no-favorites" class="no-content">
+                    <i class="fas fa-heart"></i>
+                    <h3>هیچ آیه‌ای در علاقه‌مندی‌ها نیست</h3>
+                    <p>آیات مورد علاقه خود را با کلیک بر روی آیکون قلب اضافه کنید</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Settings Section -->
+        <section id="settings" class="settings-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>تنظیمات</h2>
+                </div>
+                
+                <div class="settings-grid">
+                    <div class="setting-card">
+                        <h3>نمایش</h3>
+                        <div class="setting-item">
+                            <label>اندازه فونت عربی:</label>
+                            <input type="range" id="arabic-font-size" min="16" max="32" value="24">
+                            <span id="arabic-font-display">24px</span>
+                        </div>
+                        <div class="setting-item">
+                            <label>اندازه فونت ترجمه:</label>
+                            <input type="range" id="translation-font-size" min="12" max="20" value="16">
+                            <span id="translation-font-display">16px</span>
+                        </div>
+                        <div class="setting-item">
+                            <label>نمایش شماره آیه:</label>
+                            <input type="checkbox" id="show-verse-numbers" checked>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-card">
+                        <h3>صوت</h3>
+                        <div class="setting-item">
+                            <label>قاری:</label>
+                            <select id="reciter-select">
+                                <option value="ar.alafasy">مشاری العفاسی</option>
+                                <option value="ar.abdulsamad">عبدالباسط عبدالصمد</option>
+                                <option value="ar.husary">محمود خلیل الحصری</option>
+                                <option value="ar.minshawi">محمد صدیق المنشاوی</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>سرعت پخش:</label>
+                            <select id="playback-speed">
+                                <option value="0.5">۰.۵x</option>
+                                <option value="0.75">۰.۷۵x</option>
+                                <option value="1" selected>۱x</option>
+                                <option value="1.25">۱.۲۵x</option>
+                                <option value="1.5">۱.۵x</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>پخش خودکار:</label>
+                            <input type="checkbox" id="autoplay" checked>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-card">
+                        <h3>ترجمه</h3>
+                        <div class="setting-item">
+                            <label>ترجمه اصلی:</label>
+                            <select id="primary-translation">
+                                <option value="fa.fooladvand">فولادوند</option>
+                                <option value="fa.makarem">مکارم شیرازی</option>
+                                <option value="fa.ansarian">انصاریان</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>نمایش ترجمه انگلیسی:</label>
+                            <input type="checkbox" id="show-english">
+                        </div>
+                        <div class="setting-item">
+                            <label>ترجمه انگلیسی:</label>
+                            <select id="english-translation">
+                                <option value="en.asad">Muhammad Asad</option>
+                                <option value="en.pickthall">Pickthall</option>
+                                <option value="en.yusufali">Yusuf Ali</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-card">
+                        <h3>عمومی</h3>
+                        <div class="setting-item">
+                            <label>پوسته تیره:</label>
+                            <input type="checkbox" id="dark-mode-setting">
+                        </div>
+                        <div class="setting-item">
+                            <label>ذخیره موقعیت مطالعه:</label>
+                            <input type="checkbox" id="save-position" checked>
+                        </div>
+                        <div class="setting-item">
+                            <button class="btn btn-danger" onclick="resetSettings()">
+                                <i class="fas fa-refresh"></i>
+                                بازنشانی تنظیمات
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>قرآن کریم</h4>
+                    <p>وب سایت جامع قرآنی با امکانات پیشرفته برای مطالعه و تدبر در کلام الله</p>
+                </div>
+                <div class="footer-section">
+                    <h4>پیوندهای مفید</h4>
+                    <ul>
+                        <li><a href="#home">صفحه اصلی</a></li>
+                        <li><a href="#surahs">سوره‌ها</a></li>
+                        <li><a href="#search">جستجو</a></li>
+                        <li><a href="#favorites">علاقه‌مندی‌ها</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>امکانات</h4>
+                    <ul>
+                        <li>ترجمه فارسی</li>
+                        <li>تلاوت آنلاین</li>
+                        <li>جستجوی پیشرفته</li>
+                        <li>علاقه‌مندی‌ها</li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>تماس با ما</h4>
+                    <div class="social-links">
+                        <a href="#" title="تلگرام"><i class="fab fa-telegram"></i></a>
+                        <a href="#" title="اینستاگرام"><i class="fab fa-instagram"></i></a>
+                        <a href="#" title="توییتر"><i class="fab fa-twitter"></i></a>
+                        <a href="#" title="ایمیل"><i class="fas fa-envelope"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; ۱۴۰۳ وب سایت قرآن کریم. تمامی حقوق محفوظ است.</p>
+                <p class="api-credit">با استفاده از API های معتبر قرآنی ساخته شده است</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Audio Element -->
+    <audio id="quran-audio" preload="none"></audio>
+
+    <!-- Scripts -->
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/storage.js"></script>
+    <script src="assets/js/audio.js"></script>
+    <script src="assets/js/search.js"></script>
+    <script src="assets/js/favorites.js"></script>
+    <script src="assets/js/settings.js"></script>
+    <script src="assets/js/navigation.js"></script>
+    <script src="assets/js/verse-reader.js"></script>
+    <script src="assets/js/main.js"></script>
+</body>
+</html>
